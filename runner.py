@@ -72,19 +72,23 @@ def make_pipeline(alpha=0.3):
                 line_fit = lanes.fit_quad(
                     binary_warped,
                     line.current_fit,
-                    margin=50)
+                    margin=100)
                 line.current_fit = alpha * line_fit + \
                     (1 - alpha) * line.current_fit
 
-            # radius of curvature of the line in some units
-            crv = lanes.curvature(ny - 100, line.current_fit)
-            line.radius_of_curvature = crv
+            # # radius of curvature of the line in some units
+            # crv = lanes.curvature(ny - 100, line.current_fit)
+            # line.radius_of_curvature = crv
 
         # Draw lane on original image
         ploty = np.linspace(0, ny - 1, ny)
 
         left_fitx = np.poly1d(left_line.current_fit)(ploty)
         right_fitx = np.poly1d(right_line.current_fit)(ploty)
+
+        for line in [left_line, right_line]:
+            crv = np.min(lanes.curvature(ploty, line.current_fit))
+            line.radius_of_curvature = crv
 
         # Create an image to draw the lines on
         warp_zero = np.zeros_like(binary_warped).astype(np.uint8)
@@ -105,10 +109,10 @@ def make_pipeline(alpha=0.3):
         result = cv2.addWeighted(undist, 1, newwarp, 0.3, 0)
 
         # Annotate curvature
-        mean_crv = (left_line.radius_of_curvature +
-                    right_line.radius_of_curvature) / 2
-        effective_crv = np.min((mean_crv, 10000))
-        xxl = '+' if mean_crv >= 10000 else ''
+        crv = np.min((left_line.radius_of_curvature,
+                      right_line.radius_of_curvature))
+        effective_crv = np.min((crv, 10000))
+        xxl = '+' if crv >= 10000 else ''
         cv2.putText(
             result,
             'Radius of Curvature: {:,.0f}{} (m)'.format(effective_crv, xxl),
@@ -119,8 +123,8 @@ def make_pipeline(alpha=0.3):
             thickness=cv2.LINE_4)
 
         # Annotate distance from center
-        xm_per_pix = 3.7 / 670
-        d_pix = (left_fitx[-1] + right_fitx[-1]) / 2 - midpoint
+        xm_per_pix = 3.7 / 680
+        d_pix = midpoint - (left_fitx[-1] + right_fitx[-1]) / 2
         d_m = xm_per_pix * d_pix
         lr = 'left' if d_m < 0 else 'right'
         cv2.putText(
@@ -152,7 +156,7 @@ if __name__ == '__main__':
     # Run pipeline on project video
 
     pipe = make_pipeline(alpha=0.3)
-    clip_name = "harder_challenge_video.mp4"
+    clip_name = "project_video.mp4"
     clip = VideoFileClip(clip_name)
 
     out_clip = clip.fl_image(pipe)

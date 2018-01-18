@@ -93,8 +93,8 @@ class Camera():
 
 # Perspective transform
 
-SRC = np.float32([[200, 720], [595, 450], [695, 450], [1120, 720]])
-DST = np.float32([[300, 720], [300, 0], [970, 0], [970, 720]])
+SRC = np.float32([[160, 720], [585, 450], [695, 450], [1120, 720]])
+DST = np.float32([[300, 720], [300, 0], [980, 0], [980, 720]])
 
 
 def warp_perspective(undist_image, src=SRC, dst=DST):
